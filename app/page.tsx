@@ -1,4 +1,5 @@
 import { Trip } from "./types";
+import TripListItem from "./components/TripListItem";
 
 const trips: Trip[] = [
   { id: 1, name: "Summer in Japan", destination: "Tokyo, Japan", startDate: "2026-09-10" },
@@ -11,9 +12,7 @@ export default function Home() {
       <h1>My Trips</h1>
       <ul>
         {trips.map((trip) => (
-          <li key={trip.id}>
-            {trip.name} — {trip.destination}
-          </li>
+          <TripListItem key={trip.id} trip={trip} />
         ))}
       </ul>
     </div>
