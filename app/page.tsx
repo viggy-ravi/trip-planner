@@ -10,19 +10,37 @@ export default function Home() {
     { id: 2, name: "Ski Trip", destination: "Aspen, Colorado", startDate: "2027-01-05" },
   ]);
 
+  const [newTripName, setNewTripName] = useState("");
+  const [newTripDestination, setNewTripDestination] = useState("");
+
+  function handleAddTrip(e: React.SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setTrips([
+      ...trips,
+      { id: Date.now(), name: newTripName, destination: newTripDestination, startDate: "2027-01-01" },
+    ]);
+    setNewTripName("");
+    setNewTripDestination("");
+  }
+
   return (
     <div>
       <h1>My Trips</h1>
-      <button
-        onClick={() =>
-          setTrips([
-            ...trips,
-            { id: Date.now(), name: "New Trip", destination: "TBD", startDate: "2027-06-01" },
-          ])
-        }
-      >
-        Add Trip
-      </button>
+      <form onSubmit={handleAddTrip}>
+        <input
+          type="text"
+          placeholder="Trip name"
+          value={newTripName}
+          onChange={(e) => setNewTripName(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Destination"
+          value={newTripDestination}
+          onChange={(e) => setNewTripDestination(e.target.value)}
+        />
+        <button type="submit">Add Trip</button>
+      </form>
       <ul>
         {trips.map((trip) => (
           <TripListItem key={trip.id} trip={trip} />
