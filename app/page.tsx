@@ -3,12 +3,11 @@
 import { Trip } from "./types";
 import TripListItem from "./components/TripListItem";
 import { useState } from "react";
+import { initialTrips } from "./data";
 
 export default function Home() {
-  const [trips, setTrips] = useState<Trip[]>([
-    { id: 1, name: "Summer in Japan", destination: "Tokyo, Japan", startDate: "2026-09-10" },
-    { id: 2, name: "Ski Trip", destination: "Aspen, Colorado", startDate: "2027-01-05" },
-  ]);
+  
+  const [trips, setTrips] = useState<Trip[]>(initialTrips);
 
   const [newTripName, setNewTripName] = useState("");
   const [newTripDestination, setNewTripDestination] = useState("");
