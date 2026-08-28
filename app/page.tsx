@@ -13,6 +13,16 @@ export default function Home() {
   return (
     <div>
       <h1>My Trips</h1>
+      <button
+        onClick={() =>
+          setTrips([
+            ...trips,
+            { id: Date.now(), name: "New Trip", destination: "TBD", startDate: "2027-06-01" },
+          ])
+        }
+      >
+        Add Trip
+      </button>
       <ul>
         {trips.map((trip) => (
           <TripListItem key={trip.id} trip={trip} />
