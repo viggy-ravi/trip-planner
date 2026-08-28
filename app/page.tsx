@@ -1,9 +1,4 @@
-interface Trip {
-  id: number;
-  name: string;
-  destination: string;
-  startDate: string;
-}
+import { Trip } from "./types";
 
 const trips: Trip[] = [
   { id: 1, name: "Summer in Japan", destination: "Tokyo, Japan", startDate: "2026-09-10" },
