@@ -9,21 +9,36 @@ export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
 
   const [newTripName, setNewTripName] = useState("");
   const [newTripDestination, setNewTripDestination] = useState("");
+  const [newTripStartDate, setNewTripStartDate] = useState("");
+  const [newTripEndDate, setNewTripEndDate] = useState("");
 
-  function handleAddTrip(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleAddTrip(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    const response = await fetch("/api/trips", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newTripName,
+        destination: newTripDestination,
+        startDate: newTripStartDate,
+        endDate: newTripEndDate,
+      }),
+    });
+    const newTrip = await response.json();
+
     setTrips([
       ...trips,
       {
-        id: Date.now(),
-        name: newTripName,
-        destination: newTripDestination,
-        startDate: new Date(),
-        endDate: new Date(),
+        ...newTrip,
+        startDate: new Date(newTrip.startDate),
+        endDate: new Date(newTrip.endDate),
       },
     ]);
     setNewTripName("");
     setNewTripDestination("");
+    setNewTripStartDate("");
+    setNewTripEndDate("");
   }
 
   return (
@@ -41,6 +56,16 @@ export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
           placeholder="Destination"
           value={newTripDestination}
           onChange={(e) => setNewTripDestination(e.target.value)}
+        />
+        <input
+          type="date"
+          value={newTripStartDate}
+          onChange={(e) => setNewTripStartDate(e.target.value)}
+        />
+        <input
+          type="date"
+          value={newTripEndDate}
+          onChange={(e) => setNewTripEndDate(e.target.value)}
         />
         <button type="submit">Add Trip</button>
       </form>
