@@ -1,4 +1,4 @@
-import { initialTrips } from "../../data";
+import { prisma } from "@/lib/prisma";
 
 export default async function TripDetailPage({
   params,
@@ -6,7 +6,7 @@ export default async function TripDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const trip = initialTrips.find((t) => t.id === Number(id));
+  const trip = await prisma.trip.findUnique({ where: { id: Number(id) } });
 
   if (!trip) {
     return <div>Trip not found.</div>;
@@ -16,7 +16,7 @@ export default async function TripDetailPage({
     <div>
       <h1>{trip.name}</h1>
       <p>{trip.destination}</p>
-      <p>{trip.startDate}</p>
+      <p>{trip.startDate.toLocaleDateString()}</p>
     </div>
   );
 }
