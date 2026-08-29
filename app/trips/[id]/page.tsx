@@ -1,3 +1,4 @@
+import TripDetail from "@/app/components/TripDetail";
 import { prisma } from "@/lib/prisma";
 
 export default async function TripDetailPage({
@@ -12,11 +13,5 @@ export default async function TripDetailPage({
     return <div>Trip not found.</div>;
   }
 
-  return (
-    <div>
-      <h1>{trip.name}</h1>
-      <p>{trip.destination}</p>
-      <p>{trip.startDate.toLocaleDateString()}</p>
-    </div>
-  );
+  return <TripDetail trip={trip} />;
 }

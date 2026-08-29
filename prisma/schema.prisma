@@ -34,7 +34,7 @@ model Activity {
   url         String?
 
   tripId Int
-  trip   Trip @relation(fields: [tripId], references: [id])
+  trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 }
 
 model Note {
@@ -42,7 +42,7 @@ model Note {
   content String
 
   tripId Int
-  trip   Trip @relation(fields: [tripId], references: [id])
+  trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   authorId Int
   author   User @relation(fields: [authorId], references: [id])
@@ -67,7 +67,7 @@ model TripMember {
   role Role
 
   tripId Int
-  trip   Trip @relation(fields: [tripId], references: [id])
+  trip   Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
 
   userId Int
   user   User @relation(fields: [userId], references: [id])
