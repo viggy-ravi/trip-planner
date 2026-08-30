@@ -76,7 +76,9 @@ export default function ActivityListItem({
     <li>
       {activity.title}
       {activity.location && ` — ${activity.location}`}
+      {" "}
       <button onClick={() => setIsEditing(true)}>Edit</button>
+      {" "}
       <form onSubmit={handleDeleteActivity} style={{ display: "inline" }}>
         <button type="submit">Delete</button>
       </form>

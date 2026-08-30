@@ -1,11 +1,12 @@
 "use client";
 
-import { Trip, Activity } from "../types";
+import { Trip, Activity, Note } from "../types";
 import ActivityListItem from "./ActivityListItem";
+import NoteListItem from "./NoteListItem";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function TripDetail({ trip }: { trip: Trip & { activities: Activity[] } }) {
+export default function TripDetail({ trip }: { trip: Trip & { activities: Activity[]; notes: Note[] } }) {
     const router = useRouter()
 
     async function handleDeleteTrip(e: React.SubmitEvent<HTMLFormElement>) {
@@ -91,6 +92,36 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
         setNewActivityLocation("");
         setNewActivityUrl("");
     }
+
+    const [notes, setNotes] = useState<Note[]>(trip.notes);
+
+    function handleNoteUpdate(updated: Note) {
+        setNotes(notes.map((n) => (n.id === updated.id ? updated : n)));
+    }
+
+    function handleNoteDelete(id: number) {
+        setNotes(notes.filter((n) => n.id !== id));
+    }
+
+    const [newNoteContent, setNewNoteContent] = useState("");
+
+    async function handleAddNote(e: React.SubmitEvent<HTMLFormElement>) {
+        e.preventDefault();
+        const response = await fetch(`/api/trips/${trip.id}/notes`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content: newNoteContent }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            console.error("Failed to add note:", error);
+            return;
+        }
+        const newNote = await response.json();
+        setNotes([...notes, newNote]);
+        setNewNoteContent("");
+    }
+
     return (
         <div>
             {isEditing ? (
@@ -175,6 +206,27 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
                     onChange={(e) => setNewActivityUrl(e.target.value)} 
                 />
                 <button type="submit">Add Activity</button>
+            </form>
+
+            <h2>Notes</h2>
+            <ul>
+                {notes.map((note) => (
+                    <NoteListItem
+                        key={note.id}
+                        note={note}
+                        onUpdate={handleNoteUpdate}
+                        onDelete={handleNoteDelete}
+                    />
+                ))}
+            </ul>
+
+            <form onSubmit={handleAddNote}>
+                <input
+                    type="text" value={newNoteContent}
+                    placeholder="Add a note"
+                    onChange={(e) => setNewNoteContent(e.target.value)}
+                />
+                <button type="submit">Add Note</button>
             </form>
         </div>
     );

@@ -19,3 +19,15 @@ export interface Activity {
   location: string | null;
   url: string | null;
 }
+
+export interface Note {
+  id: number;
+  tripId: number;
+  content: string;
+  authorId: number;
+  author: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}

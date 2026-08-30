@@ -9,7 +9,7 @@ export default async function TripDetailPage({
   const { id } = await params;
   const trip = await prisma.trip.findUnique({
     where: { id: Number(id) },
-    include: { activities: true },
+    include: { activities: true, notes: { include: { author: true } } },
   });
 
   if (!trip) {
