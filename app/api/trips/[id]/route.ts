@@ -1,9 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const { id } = await params;
   const id_num: number = +id;
+
+  if (!session.user.isAdmin) {
+    const membership = await prisma.tripMember.findUnique({
+      where: {
+        tripId_userId: { tripId: id_num, userId: Number(session.user.id) },
+      },
+    });
+
+    if (membership?.role !== "OWNER") {
+      return NextResponse.json(
+        { error: "Only the trip owner or an admin can delete this trip" },
+        { status: 403 }
+      );
+    }
+  }
 
   await prisma.trip.delete({ where: { id: id_num } })
 

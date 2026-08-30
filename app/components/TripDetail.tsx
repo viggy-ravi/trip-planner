@@ -1,17 +1,32 @@
 "use client";
 
-import { Trip, Activity, Note } from "../types";
+import { Trip, Activity, Note, TripMember } from "../types";
 import ActivityListItem from "./ActivityListItem";
 import NoteListItem from "./NoteListItem";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export default function TripDetail({ trip }: { trip: Trip & { activities: Activity[]; notes: Note[] } }) {
+export default function TripDetail({
+    trip,
+    canDelete,
+}: {
+    trip: Trip & { activities: Activity[]; notes: Note[]; members: TripMember[] };
+    canDelete: boolean;
+}) {
     const router = useRouter()
+    const [deleteError, setDeleteError] = useState("");
 
     async function handleDeleteTrip(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
+        setDeleteError("");
         const response = await fetch(`/api/trips/${trip.id}`, { method: "DELETE" });
+
+        if (!response.ok) {
+            const error = await response.json();
+            setDeleteError(error.error ?? "Failed to delete trip");
+            return;
+        }
+
         router.push("/")
     }
 
@@ -122,6 +137,28 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
         setNewNoteContent("");
     }
 
+    const [members, setMembers] = useState<TripMember[]>(trip.members);
+    const [inviteEmail, setInviteEmail] = useState("");
+    const [inviteError, setInviteError] = useState("");
+
+    async function handleInvite(e: React.SubmitEvent<HTMLFormElement>) {
+        e.preventDefault();
+        setInviteError("");
+        const response = await fetch(`/api/trips/${trip.id}/members`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: inviteEmail }),
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            setInviteError(error.error ?? "Failed to invite collaborator");
+            return;
+        }
+        const newMember = await response.json();
+        setMembers([...members, newMember]);
+        setInviteEmail("");
+    }
+
     return (
         <div>
             {isEditing ? (
@@ -153,9 +190,31 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
                     </>
             )}
 
-            <form onSubmit={handleDeleteTrip}>
-                <button type="submit">Delete Trip</button>
+            {canDelete && (
+                <form onSubmit={handleDeleteTrip}>
+                    <button type="submit">Delete Trip</button>
+                </form>
+            )}
+            {deleteError && <p>{deleteError}</p>}
+
+            <h2>Members</h2>
+            <ul>
+                {members.map((member) => (
+                    <li key={member.id}>
+                        {member.user.name} ({member.user.email}) — {member.role}
+                    </li>
+                ))}
+            </ul>
+
+            <form onSubmit={handleInvite}>
+                <input
+                    type="email" value={inviteEmail}
+                    placeholder="Invite by email"
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                />
+                <button type="submit">Invite</button>
             </form>
+            {inviteError && <p>{inviteError}</p>}
 
             <h2>Activities</h2>
             <ul>

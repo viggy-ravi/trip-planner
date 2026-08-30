@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const body = await request.json();
 
   if (!body.name || !body.destination || !body.startDate || !body.endDate) {
@@ -17,6 +24,9 @@ export async function POST(request: Request) {
       destination: body.destination,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
+      members: {
+        create: { userId: Number(session.user.id), role: "OWNER" },
+      },
     },
   });
 

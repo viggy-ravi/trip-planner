@@ -31,3 +31,15 @@ export interface Note {
     email: string;
   };
 }
+
+export interface TripMember {
+  id: number;
+  tripId: number;
+  userId: number;
+  role: "OWNER" | "COLLABORATOR";
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
