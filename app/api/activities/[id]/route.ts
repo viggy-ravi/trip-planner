@@ -2,7 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { toDateOrNull, toTimeOrNull } from "@/lib/dates";
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const id_num: number = +id;
+
+  await prisma.activity.delete({ where: { id: id_num } })
+
+  return new NextResponse(null, { status: 204 });
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const id_num: number = +id;
 
@@ -15,9 +24,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const activity = await prisma.activity.create({
+  const updatedActivity = await prisma.activity.update({
+    where: {
+      id: id_num,
+    },
     data: {
-      tripId: id_num,
       title: body.title,
       description: body.description,
       date: toDateOrNull(body.date),
@@ -26,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       location: body.location,
       url: body.url,
     },
-  });
+  })
 
-  return NextResponse.json(activity, { status: 201 });
+  return NextResponse.json(updatedActivity, { status: 200 });
 }
