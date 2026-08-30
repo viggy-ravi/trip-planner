@@ -1,12 +1,11 @@
 "use client";
 
 import { Trip, Activity } from "../types";
+import ActivityListItem from "./ActivityListItem";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function TripDetail({ trip }: { trip: Trip & { activities: Activity[] } }) {
-
-    // Delete Trip
     const router = useRouter()
 
     async function handleDeleteTrip(e: React.SubmitEvent<HTMLFormElement>) {
@@ -15,7 +14,6 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
         router.push("/")
     }
 
-    // Edit Trip
     const [name, setName] = useState(trip.name);
     const [destination, setDestination] = useState(trip.destination);
     const [startDate, setStartDate] = useState(trip.startDate.toISOString().split("T")[0]);
@@ -33,19 +31,18 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
         setIsEditing(false); 
     }
 
-    // Add Activity
-    const [activities, setActivities] = useState(trip.activities);
-    
+    const [activities, setActivities] = useState<Activity[]>(trip.activities);
+
     const [newActivityTitle, setNewActivityTitle] = useState("");
     const [newActivityDescription, setNewActivityDescription] = useState("");
     const [newActivityDate, setNewActivityDate] = useState("");
-    const [newActivityTime, setNewActivityTime] = useState("");
+    const [newActivityStartTime, setNewActivityStartTime] = useState("");
+    const [newActivityEndTime, setNewActivityEndTime] = useState("");
     const [newActivityLocation, setNewActivityLocation] = useState("");
     const [newActivityUrl, setNewActivityUrl] = useState("");
 
     async function handleAddActivity(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
-        // 1. POST to `/api/trips/${trip.id}/activities` with the field values as JSON
         const response = await fetch(`/api/trips/${trip.id}/activities`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -53,36 +50,40 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
                 title: newActivityTitle,
                 description: newActivityDescription,
                 date: newActivityDate,
-                time: newActivityTime,
+                startTime: newActivityStartTime,
+                endTime: newActivityEndTime,
                 location: newActivityLocation,
                 url: newActivityUrl,
             }),
         });
+        if (!response.ok) {
+            const error = await response.json();
+            console.error("Failed to add activity:", error);
+            return;
+        }
         const newActivity = await response.json();
 
-        // 2. parse the response JSON — this is the newly created activity, WITH its real db id
-        
-
-        // 3. setActivities(...) — append the new activity to the existing array
+        // date/startTime/endTime are optional — `new Date(null)` silently
+        // becomes the 1970 epoch instead of staying null, so guard each one.
         setActivities([
-        ...activities,
-        {
-            ...newActivity,
-            date: new Date(newActivity.date),
-        },
+            ...activities,
+            {
+                ...newActivity,
+                date: newActivity.date ? new Date(newActivity.date) : null,
+                startTime: newActivity.startTime ? new Date(newActivity.startTime) : null,
+                endTime: newActivity.endTime ? new Date(newActivity.endTime) : null,
+            },
         ]);
 
-        // 4. reset the form fields back to empty strings
         setNewActivityTitle("");
         setNewActivityDescription("");
         setNewActivityDate("");
-        setNewActivityTime("");
+        setNewActivityStartTime("");
+        setNewActivityEndTime("");
         setNewActivityLocation("");
         setNewActivityUrl("");
     }
-    
-    // Return
-    return ( 
+    return (
         <div>
             {isEditing ? (
                     <form onSubmit={handleEditTrip}>
@@ -120,7 +121,7 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
             <h2>Activities</h2>
             <ul>
                 {activities.map((activity) => (
-                    <li key={activity.id}>{activity.title}</li>
+                    <ActivityListItem key={activity.id} activity={activity} />
                 ))}
             </ul>
 
@@ -135,15 +136,20 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
                     placeholder="Description" 
                     onChange={(e) => setNewActivityDescription(e.target.value)} 
                 />
-                <input 
-                    type="date" value={newActivityDate} 
-                    placeholder="Date" 
-                    onChange={(e) => setNewActivityDate(e.target.value)} 
+                <input
+                    type="date" value={newActivityDate}
+                    placeholder="Date"
+                    onChange={(e) => setNewActivityDate(e.target.value)}
                 />
-                <input 
-                    type="text" value={newActivityTime} 
-                    placeholder="Time" 
-                    onChange={(e) => setNewActivityTime(e.target.value)} 
+                <input
+                    type="time" value={newActivityStartTime}
+                    placeholder="Start time"
+                    onChange={(e) => setNewActivityStartTime(e.target.value)}
+                />
+                <input
+                    type="time" value={newActivityEndTime}
+                    placeholder="End time"
+                    onChange={(e) => setNewActivityEndTime(e.target.value)}
                 />
                 <input 
                     type="text" value={newActivityLocation} 

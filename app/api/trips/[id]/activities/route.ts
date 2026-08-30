@@ -2,33 +2,35 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  // 1. get id out of params
   const { id } = await params;
   const id_num: number = +id;
 
-  // 2. read + validate the body
   const body = await request.json();
 
-  if (!body.date || !body.description || !body.location || !body.title) {
+  if (!body.title) {
     return NextResponse.json(
-      { error: "date, description, location, and title are required" },
+      { error: "title is required" },
       { status: 400 }
     );
   }
 
-  // 3. call prisma.trip.create() to create new activity in Activity
   const activity = await prisma.activity.create({
     data: {
       tripId: id_num,
       title: body.title,
       description: body.description,
-      date: new Date(body.date),
-      time: body.time, 
+      // date/startTime/endTime are all optional now — an empty string would
+      // fail `new Date(...)`, so only convert when a value was actually sent.
+      date: body.date ? new Date(body.date) : null,
+      // <input type="time"> sends bare "HH:MM", which isn't a parseable Date
+      // on its own — prefix a placeholder date so `new Date(...)` succeeds;
+      // only the time-of-day part is stored, since the column is @db.Time.
+      startTime: body.startTime ? new Date(`1970-01-01T${body.startTime}`) : null,
+      endTime: body.endTime ? new Date(`1970-01-01T${body.endTime}`) : null,
       location: body.location,
       url: body.url,
     },
-  })
-  
-  // 4. return new activity
+  });
+
   return NextResponse.json(activity, { status: 201 });
 }

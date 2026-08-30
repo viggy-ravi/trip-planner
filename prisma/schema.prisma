@@ -25,12 +25,15 @@ model Trip {
 }
 
 model Activity {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
-  description String
-  date        DateTime
-  time        String?
-  location    String
+  description String?
+  date        DateTime?
+  // @db.Time stores just a time-of-day in Postgres (no date part), instead of
+  // the full-timestamp column DateTime normally maps to.
+  startTime   DateTime? @db.Time
+  endTime     DateTime? @db.Time
+  location    String?
   url         String?
 
   tripId Int
