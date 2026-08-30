@@ -33,6 +33,14 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
 
     const [activities, setActivities] = useState<Activity[]>(trip.activities);
 
+    function handleActivityUpdate(updated: Activity) {
+        setActivities(activities.map((a) => (a.id === updated.id ? updated : a)));
+    }
+
+    function handleActivityDelete(id: number) {
+        setActivities(activities.filter((a) => a.id !== id));
+    }
+
     const [newActivityTitle, setNewActivityTitle] = useState("");
     const [newActivityDescription, setNewActivityDescription] = useState("");
     const [newActivityDate, setNewActivityDate] = useState("");
@@ -121,7 +129,12 @@ export default function TripDetail({ trip }: { trip: Trip & { activities: Activi
             <h2>Activities</h2>
             <ul>
                 {activities.map((activity) => (
-                    <ActivityListItem key={activity.id} activity={activity} />
+                    <ActivityListItem
+                        key={activity.id}
+                        activity={activity}
+                        onUpdate={handleActivityUpdate}
+                        onDelete={handleActivityDelete}
+                    />
                 ))}
             </ul>
 
