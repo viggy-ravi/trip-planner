@@ -52,9 +52,11 @@ model Note {
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  name  String
+  id       Int     @id @default(autoincrement())
+  email    String  @unique
+  name     String
+  password String
+  isAdmin  Boolean @default(false)
 
   notes       Note[]
   tripMembers TripMember[]

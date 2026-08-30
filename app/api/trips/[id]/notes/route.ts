@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// No auth/session exists yet, so there's no logged-in user to attribute a
-// note to. Hardcoded to the one seed User row until real auth is built.
-const CURRENT_USER_ID = 1;
+import { auth } from "@/lib/auth";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const { id } = await params;
   const id_num: number = +id;
 
@@ -22,9 +25,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     data: {
       tripId: id_num,
       content: body.content,
-      authorId: CURRENT_USER_ID,
+      authorId: Number(session.user.id),
     },
-    include: { author: true },
+    include: { author: { select: { id: true, name: true, email: true } } },
   });
 
   return NextResponse.json(note, { status: 201 });

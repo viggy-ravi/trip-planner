@@ -30,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     data: {
       content: body.content,
     },
-    include: { author: true },
+    include: { author: { select: { id: true, name: true, email: true } } },
   })
 
   return NextResponse.json(updatedNote, { status: 200 });
