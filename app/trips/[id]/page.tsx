@@ -7,7 +7,10 @@ export default async function TripDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const trip = await prisma.trip.findUnique({ where: { id: Number(id) } });
+  const trip = await prisma.trip.findUnique({
+    where: { id: Number(id) },
+    include: { activities: true },
+  });
 
   if (!trip) {
     return <div>Trip not found.</div>;
