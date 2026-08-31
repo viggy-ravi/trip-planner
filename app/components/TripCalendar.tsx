@@ -31,6 +31,33 @@ function formatDayHeading(dayKey: string, showMonth: boolean): string {
   });
 }
 
+// Caps each breakpoint's column count to the trip's actual day count (up to
+// that breakpoint's max) instead of always reserving the max number of
+// tracks — a short trip (e.g. 4 days) would otherwise get squeezed into
+// narrow cards while 3 empty columns sat unused to the right. Tailwind's
+// compiler needs literal class names, hence the lookup arrays rather than
+// building `grid-cols-${n}` dynamically.
+const BASE_COLS = ["", "grid-cols-1", "grid-cols-2"];
+const SM_COLS = ["", "sm:grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-3", "sm:grid-cols-4"];
+const LG_COLS = [
+  "",
+  "lg:grid-cols-1",
+  "lg:grid-cols-2",
+  "lg:grid-cols-3",
+  "lg:grid-cols-4",
+  "lg:grid-cols-5",
+  "lg:grid-cols-6",
+  "lg:grid-cols-7",
+];
+
+function itineraryGridClass(dayCount: number): string {
+  return [
+    BASE_COLS[Math.min(dayCount, 2)],
+    SM_COLS[Math.min(dayCount, 4)],
+    LG_COLS[Math.min(dayCount, 7)],
+  ].join(" ");
+}
+
 export default function TripCalendar({
   tripId,
   startDate,
@@ -76,7 +103,7 @@ export default function TripCalendar({
         <Button size="sm" onClick={() => setShowAddActivity(true)}>+ Add Activity</Button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+      <div className={`grid ${itineraryGridClass(days.length)} gap-3 mb-4`}>
         {days.map((day, i) => (
           <div key={day} className="border border-gray-200 rounded-lg p-3 min-h-[220px] bg-gray-50">
             <div className="text-sm font-semibold text-gray-900 mb-2">
