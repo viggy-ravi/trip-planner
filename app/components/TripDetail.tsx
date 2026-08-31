@@ -5,7 +5,8 @@ import { Trip, Activity, Note, TripMember } from "../types";
 import TripCalendar from "./TripCalendar";
 import NotesSidebar from "./NotesSidebar";
 import InvitePopover from "./InvitePopover";
-import { PlusIcon } from "./Icons";
+import ConfirmDialog from "./ConfirmDialog";
+import { PlusIcon, TrashIcon } from "./Icons";
 import { useState } from "react";
 
 function formatDate(dateStr: string): string {
@@ -56,9 +57,26 @@ export default function TripDetail({
     }
 
     const [members, setMembers] = useState<TripMember[]>(trip.members);
+    const [removingMember, setRemovingMember] = useState<TripMember | null>(null);
+    const [removeError, setRemoveError] = useState("");
 
     function handleMembersInvited(newMembers: TripMember[]) {
         setMembers([...members, ...newMembers]);
+    }
+
+    async function handleRemoveMember() {
+        if (!removingMember) return;
+        setRemoveError("");
+        const response = await fetch(`/api/trips/${trip.id}/members/${removingMember.userId}`, {
+            method: "DELETE",
+        });
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            setRemoveError(body.error ?? "Failed to remove member");
+            return;
+        }
+        setMembers(members.filter((m) => m.id !== removingMember.id));
+        setRemovingMember(null);
     }
 
     return (
@@ -114,11 +132,24 @@ export default function TripDetail({
                         </div>
                         <ul className="space-y-1 text-sm text-gray-700">
                             {members.map((member) => (
-                                <li key={member.id}>
-                                    {member.user.name} ({member.user.email}) — {member.role}
+                                <li key={member.id} className="flex items-center justify-between gap-2 group">
+                                    <span>
+                                        {member.user.name} ({member.user.email}) — {member.role}
+                                    </span>
+                                    {isOwner && member.role !== "OWNER" && (
+                                        <button
+                                            onClick={() => setRemovingMember(member)}
+                                            aria-label={`Remove ${member.user.name}`}
+                                            title={`Remove ${member.user.name}`}
+                                            className="text-gray-300 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100"
+                                        >
+                                            <TrashIcon className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
+                        {removeError && <p className="text-xs text-red-600 mt-2">{removeError}</p>}
                     </div>
                 </div>
                 <div className="lg:w-72 shrink-0">
@@ -131,6 +162,15 @@ export default function TripDetail({
                     />
                 </div>
             </div>
+
+            {removingMember && (
+                <ConfirmDialog
+                    title="Remove member?"
+                    message={`Remove ${removingMember.user.name} from this trip? They'll lose access immediately.`}
+                    onConfirm={handleRemoveMember}
+                    onCancel={() => setRemovingMember(null)}
+                />
+            )}
         </div>
     );
 }
