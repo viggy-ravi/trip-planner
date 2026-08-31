@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const isSafeNext = next && next.startsWith("/") && !next.startsWith("//");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +33,7 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/login");
+    router.push(isSafeNext ? `/login?next=${encodeURIComponent(next)}` : "/login");
   }
 
   return (
@@ -67,11 +70,22 @@ export default function SignupPage() {
         {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
         <p className="text-sm text-gray-600 mt-4">
           Already have an account?{" "}
-          <Link href="/login" className="text-gray-900 underline">
+          <Link
+            href={isSafeNext ? `/login?next=${encodeURIComponent(next)}` : "/login"}
+            className="text-gray-900 underline"
+          >
             Log in
           </Link>
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

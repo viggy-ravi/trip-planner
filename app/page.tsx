@@ -9,7 +9,20 @@ export default async function Home() {
 
   const trips = await prisma.trip.findMany({
     where: isAdmin ? undefined : { members: { some: { userId } } },
-    include: { members: { where: { userId }, select: { role: true } } },
+    // Explicit select (rather than the default "every column") so
+    // Trip.inviteToken — a secret, not just data the homepage happens not
+    // to render — never reaches the client here at all, regardless of
+    // whether this viewer has invite permission on a given trip.
+    select: {
+      id: true,
+      name: true,
+      destination: true,
+      startDate: true,
+      endDate: true,
+      imageUrl: true,
+      allowMemberInvites: true,
+      members: { where: { userId }, select: { role: true } },
+    },
     orderBy: { startDate: "asc" },
   });
 

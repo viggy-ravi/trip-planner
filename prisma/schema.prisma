@@ -20,6 +20,7 @@ model Trip {
   endDate     DateTime
   imageUrl    String?
   allowMemberInvites Boolean @default(true)
+  inviteToken String? @unique
 
   activities Activity[]
   notes      Note[]

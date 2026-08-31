@@ -19,6 +19,8 @@ export default function InvitePopover({
   onAllowMemberInvitesChange,
   onInvited,
   onClose,
+  inviteToken,
+  onInviteTokenChange,
 }: {
   tripId: number;
   isOwner: boolean;
@@ -26,10 +28,14 @@ export default function InvitePopover({
   onAllowMemberInvitesChange: (allow: boolean) => void;
   onInvited: (members: TripMember[]) => void;
   onClose: () => void;
+  inviteToken: string | null;
+  onInviteTokenChange: (token: string) => void;
 }) {
   const [emailsInput, setEmailsInput] = useState("");
   const [errors, setErrors] = useState<{ email: string; error: string }[]>([]);
   const [successMessage, setSuccessMessage] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   async function handleInvite(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -57,6 +63,27 @@ export default function InvitePopover({
     }
     setErrors(inviteErrors);
     setEmailsInput("");
+  }
+
+  async function handleGenerateLink() {
+    setLinkError("");
+    const response = await fetch(`/api/trips/${tripId}/invite-link`, { method: "POST" });
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      setLinkError(body.error ?? "Failed to generate link");
+      return;
+    }
+    const { inviteToken: newToken } = await response.json();
+    onInviteTokenChange(newToken);
+  }
+
+  function handleCopyLink() {
+    if (!inviteToken) return;
+    const url = `${window.location.origin}/join/${inviteToken}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   async function handleToggleAllowMemberInvites() {
@@ -97,6 +124,41 @@ export default function InvitePopover({
             {e.email ? `${e.email}: ${e.error}` : e.error}
           </p>
         ))}
+
+        <div className="mt-4 pt-3 border-t border-gray-200">
+          <div className="text-sm font-semibold text-gray-900 mb-2">Share a link</div>
+          {inviteToken ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/join/${inviteToken}`}
+                  onFocus={(e) => e.target.select()}
+                  className={`${inputBaseStyles} flex-1 min-w-0 text-gray-500`}
+                />
+                <Button type="button" size="sm" variant="secondary" onClick={handleCopyLink}>
+                  {copied ? "Copied!" : "Copy"}
+                </Button>
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateLink}
+                className="text-xs text-gray-500 hover:text-gray-900 self-start"
+              >
+                Regenerate link
+              </button>
+            </div>
+          ) : (
+            <Button type="button" size="sm" variant="secondary" onClick={handleGenerateLink}>
+              Generate invite link
+            </Button>
+          )}
+          {linkError && <p className="text-xs text-red-600 mt-1">{linkError}</p>}
+          <p className="text-xs text-gray-500 mt-2">
+            Anyone with this link can join — they&apos;ll be asked to sign up first if they don&apos;t have an account yet.
+          </p>
+        </div>
 
         {isOwner && (
           <label className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-200 text-sm text-gray-600">

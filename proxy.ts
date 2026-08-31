@@ -11,8 +11,12 @@ export default auth((req) => {
     pathname === "/api/login" ||
     pathname === "/api/register";
   const isPublicPage = pathname === "/login" || pathname === "/signup";
+  // Join links must work whether or not you're already logged in — the page
+  // itself branches on that, unlike /login and /signup which only make
+  // sense logged out.
+  const isJoinPage = pathname.startsWith("/join/");
 
-  if (isAuthApiRoute) return;
+  if (isAuthApiRoute || isJoinPage) return;
 
   if (!isLoggedIn) {
     if (pathname.startsWith("/api")) {

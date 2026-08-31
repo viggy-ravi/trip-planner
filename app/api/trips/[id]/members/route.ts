@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { requireTripMember } from "@/lib/authz";
+import { requireInvitePermission } from "@/lib/authz";
 import { handleApiError } from "@/lib/api-error";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -9,30 +9,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const tripId = Number(id);
 
-  // Base gate: must be a member (or admin) at all. The extra "non-owner
-  // members need the trip's invite policy to allow it" rule below is more
-  // specific than requireTripMember's plain membership check, so it's kept
-  // inline rather than folded into the shared helper.
-  const authError = await requireTripMember(session, tripId);
+  const authError = await requireInvitePermission(session, tripId);
   if (authError) return authError;
-
-  if (!session!.user!.isAdmin) {
-    const membership = await prisma.tripMember.findUnique({
-      where: {
-        tripId_userId: { tripId, userId: Number(session!.user!.id) },
-      },
-    });
-
-    if (membership?.role !== "OWNER") {
-      const trip = await prisma.trip.findUnique({ where: { id: tripId }, select: { allowMemberInvites: true } });
-      if (!trip?.allowMemberInvites) {
-        return NextResponse.json(
-          { error: "Only the trip owner can invite collaborators right now" },
-          { status: 403 }
-        );
-      }
-    }
-  }
 
   const body = await request.json();
   const emails: string[] = body.emails ?? (body.email ? [body.email] : []);

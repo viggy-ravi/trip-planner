@@ -45,5 +45,11 @@ export default async function TripDetailPage({
     return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-600">Trip not found.</div>;
   }
 
-  return <TripDetail trip={trip} isOwner={isOwner} />;
+  // Same permission rule as inviting: redact the raw token here, in the
+  // Server Component, so it never reaches the client at all for a viewer
+  // who isn't allowed to see/share it — not just hidden in the UI.
+  const canManageInviteLink = isOwner || trip.allowMemberInvites;
+  const tripForClient = { ...trip, inviteToken: canManageInviteLink ? trip.inviteToken : null };
+
+  return <TripDetail trip={tripForClient} isOwner={isOwner} />;
 }

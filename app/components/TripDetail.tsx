@@ -22,11 +22,12 @@ export default function TripDetail({
     trip,
     isOwner,
 }: {
-    trip: Trip & { activities: Activity[]; notes: Note[]; members: TripMember[] };
+    trip: Trip & { activities: Activity[]; notes: Note[]; members: TripMember[]; inviteToken: string | null };
     isOwner: boolean;
 }) {
     const [showInvite, setShowInvite] = useState(false);
     const [allowMemberInvites, setAllowMemberInvites] = useState(trip.allowMemberInvites);
+    const [inviteToken, setInviteToken] = useState(trip.inviteToken);
 
     const [activities, setActivities] = useState<Activity[]>(trip.activities);
 
@@ -126,6 +127,8 @@ export default function TripDetail({
                                         onAllowMemberInvitesChange={setAllowMemberInvites}
                                         onInvited={handleMembersInvited}
                                         onClose={() => setShowInvite(false)}
+                                        inviteToken={inviteToken}
+                                        onInviteTokenChange={setInviteToken}
                                     />
                                 )}
                             </div>
