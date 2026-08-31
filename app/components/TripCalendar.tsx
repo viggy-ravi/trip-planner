@@ -83,7 +83,7 @@ export default function TripCalendar({
               {formatDayHeading(day, i === 0 || day.endsWith("-01"))}
             </div>
             {activitiesByDay[day]?.length ? (
-              <ul className="space-y-1.5">
+              <ul className="space-y-2">
                 {activitiesByDay[day].map((activity) => (
                   <ActivityListItem
                     key={activity.id}
@@ -94,7 +94,7 @@ export default function TripCalendar({
                 ))}
               </ul>
             ) : (
-              <p className="text-[11px] text-gray-400">No activities</p>
+              <p className="text-xs text-gray-400">No activities</p>
             )}
           </div>
         ))}

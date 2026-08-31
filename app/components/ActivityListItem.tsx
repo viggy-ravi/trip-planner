@@ -35,10 +35,10 @@ export default function ActivityListItem({
   }
 
   return (
-    <li className="relative border border-gray-200 rounded-lg p-2.5 bg-white group">
+    <li className="relative border border-gray-200 rounded-lg p-3 bg-white group">
       <span className="text-xs font-medium text-gray-900 break-words block pr-1">{activity.title}</span>
       {(activity.startTime || activity.location) && (
-        <div className="text-[11px] text-gray-500 mt-0.5">
+        <div className="text-xs text-gray-500 mt-1">
           {formatTime(activity.startTime)}
           {activity.startTime && activity.location && " · "}
           {activity.location}
@@ -49,12 +49,12 @@ export default function ActivityListItem({
           href={activity.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[11px] text-blue-600 hover:underline block mt-0.5 truncate"
+          className="text-xs text-blue-600 hover:underline block mt-1 truncate"
         >
           {activity.url}
         </a>
       )}
-      {error && <div className="text-[11px] text-red-600 mt-0.5">{error}</div>}
+      {error && <div className="text-xs text-red-600 mt-1">{error}</div>}
       {/* `hidden` (not opacity) so these take up no layout space until hovered. */}
       <span className="hidden group-hover:flex items-center gap-0.5 absolute top-1 right-1 bg-white/95 rounded-full">
         <button onClick={() => setIsEditing(true)} aria-label="Edit activity" className="text-gray-400 hover:text-gray-900 p-1">
