@@ -3,6 +3,7 @@
 import { Activity } from "../types";
 import ActivityListItem from "./ActivityListItem";
 import ActivityModal from "./ActivityModal";
+import Button from "./ui/Button";
 import { toDateInputValue } from "@/lib/dates";
 import { useState } from "react";
 
@@ -72,15 +73,10 @@ export default function TripCalendar({
     <div>
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Itinerary</h2>
-        <button
-          onClick={() => setShowAddActivity(true)}
-          className="bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-gray-700"
-        >
-          + Add Activity
-        </button>
+        <Button size="sm" onClick={() => setShowAddActivity(true)}>+ Add Activity</Button>
       </div>
 
-      <div className="grid grid-cols-7 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
         {days.map((day, i) => (
           <div key={day} className="border border-gray-200 rounded-lg p-3 min-h-[220px] bg-gray-50">
             <div className="text-sm font-semibold text-gray-900 mb-2">

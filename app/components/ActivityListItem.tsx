@@ -20,12 +20,15 @@ export default function ActivityListItem({
   onDelete: (id: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleDeleteActivity(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     const response = await fetch(`/api/activities/${activity.id}`, { method: "DELETE" });
     if (!response.ok) {
-      console.error("Failed to delete activity");
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "Failed to delete activity");
       return;
     }
     onDelete(activity.id);
@@ -51,6 +54,7 @@ export default function ActivityListItem({
           {activity.url}
         </a>
       )}
+      {error && <div className="text-[11px] text-red-600 mt-0.5">{error}</div>}
       {/* `hidden` (not opacity) so these take up no layout space until hovered. */}
       <span className="hidden group-hover:flex items-center gap-0.5 absolute top-1 right-1 bg-white/95 rounded-full">
         <button onClick={() => setIsEditing(true)} aria-label="Edit activity" className="text-gray-400 hover:text-gray-900 p-1">

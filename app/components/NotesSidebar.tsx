@@ -2,6 +2,8 @@
 
 import { Note } from "../types";
 import NoteListItem from "./NoteListItem";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 import { useState } from "react";
 
 export default function NotesSidebar({
@@ -18,17 +20,19 @@ export default function NotesSidebar({
   onNoteDelete: (id: number) => void;
 }) {
   const [newNoteContent, setNewNoteContent] = useState("");
+  const [error, setError] = useState("");
 
   async function handleAddNote(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     const response = await fetch(`/api/trips/${tripId}/notes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: newNoteContent }),
     });
     if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to add note:", error);
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "Failed to add note");
       return;
     }
     const newNote = await response.json();
@@ -49,21 +53,19 @@ export default function NotesSidebar({
         ))}
       </div>
 
+      {error && <p className="text-xs text-red-600 px-3">{error}</p>}
       <form onSubmit={handleAddNote} className="p-3 border-t border-gray-200 flex gap-2">
-        <input
+        <label className="sr-only" htmlFor="new-note-content">Add a note</label>
+        <Input
+          id="new-note-content"
           type="text"
           value={newNoteContent}
           placeholder="Add a note"
           onChange={(e) => setNewNoteContent(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-0 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          className="flex-1 min-w-0"
           required
         />
-        <button
-          type="submit"
-          className="bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-gray-700 shrink-0"
-        >
-          Post
-        </button>
+        <Button type="submit" size="sm" className="shrink-0">Post</Button>
       </form>
     </div>
   );

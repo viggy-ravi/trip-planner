@@ -1,6 +1,8 @@
 "use client";
 
 import { Trip } from "../types";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 import { useState } from "react";
 
 export default function EditTripModal({
@@ -40,8 +42,6 @@ export default function EditTripModal({
     });
   }
 
-  const inputStyles =
-    "border border-gray-300 rounded px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-400";
   const labelStyles = "text-xs font-medium text-gray-500 mt-2";
 
   return (
@@ -61,44 +61,39 @@ export default function EditTripModal({
           </div>
           <form onSubmit={handleSave} className="flex flex-col gap-1">
             <label className={labelStyles}>Name</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputStyles} required />
+            <Input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full" required />
 
             <label className={labelStyles}>Destination</label>
-            <input
+            <Input
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className={inputStyles}
+              className="w-full"
               required
             />
 
             <label className={labelStyles}>Start date</label>
-            <input
+            <Input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className={inputStyles}
+              className="w-full"
               required
             />
 
             <label className={labelStyles}>End date</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputStyles} required />
+            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full" required />
 
             <label className={labelStyles}>Image URL</label>
-            <input
+            <Input
               type="url"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className={inputStyles}
+              className="w-full"
               placeholder="https://..."
             />
 
-            <button
-              type="submit"
-              className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700 mt-3"
-            >
-              Save Changes
-            </button>
+            <Button type="submit" className="mt-3">Save Changes</Button>
           </form>
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
         </div>

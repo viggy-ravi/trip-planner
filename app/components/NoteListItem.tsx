@@ -1,6 +1,8 @@
 "use client";
 
 import { Note } from "../types";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 import { useState } from "react";
 
 export default function NoteListItem({
@@ -14,17 +16,19 @@ export default function NoteListItem({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [content, setContent] = useState(note.content);
+  const [error, setError] = useState("");
 
   async function handleEditNote(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     const response = await fetch(`/api/notes/${note.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
     if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to update note:", error);
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "Failed to update note");
       return;
     }
     const updatedNote = await response.json();
@@ -34,9 +38,11 @@ export default function NoteListItem({
 
   async function handleDeleteNote(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     const response = await fetch(`/api/notes/${note.id}`, { method: "DELETE" });
     if (!response.ok) {
-      console.error("Failed to delete note");
+      const body = await response.json().catch(() => ({}));
+      setError(body.error ?? "Failed to delete note");
       return;
     }
     onDelete(note.id);
@@ -46,19 +52,17 @@ export default function NoteListItem({
     return (
       <li className="border border-gray-200 rounded-lg p-3">
         <form onSubmit={handleEditNote} className="flex gap-2">
-          <input
+          <label className="sr-only" htmlFor={`note-content-${note.id}`}>Note</label>
+          <Input
+            id={`note-content-${note.id}`}
             type="text"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className="flex-1"
           />
-          <button
-            type="submit"
-            className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700"
-          >
-            Save
-          </button>
+          <Button type="submit">Save</Button>
         </form>
+        {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
       </li>
     );
   }
@@ -68,6 +72,7 @@ export default function NoteListItem({
       <span className="text-sm text-gray-900">
         {note.content}
         <span className="text-gray-500"> — {note.author.name}</span>
+        {error && <span className="text-xs text-red-600 block">{error}</span>}
       </span>
       <span className="flex items-center gap-3 shrink-0">
         <button

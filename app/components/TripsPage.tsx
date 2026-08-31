@@ -2,6 +2,8 @@
 
 import { Trip } from "../types";
 import TripListItem from "./TripListItem";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 import { useState } from "react";
 
 type TripWithCanManage = Trip & { canManage: boolean };
@@ -62,9 +64,6 @@ export default function TripsPage({ initialTrips }: { initialTrips: TripWithCanM
     setTrips(trips.filter((t) => t.id !== id));
   }
 
-  const inputStyles =
-    "border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-gray-400";
-
   const sortedTrips = [...trips].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
   return (
@@ -75,49 +74,54 @@ export default function TripsPage({ initialTrips }: { initialTrips: TripWithCanM
         onSubmit={handleAddTrip}
         className="flex flex-wrap gap-2 mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50"
       >
-        <input
+        <label className="sr-only" htmlFor="new-trip-name">Trip name</label>
+        <Input
+          id="new-trip-name"
           type="text"
           placeholder="Trip name"
           value={newTripName}
           onChange={(e) => setNewTripName(e.target.value)}
-          className={inputStyles}
+          className="flex-1 min-w-[140px]"
           required
         />
-        <input
+        <label className="sr-only" htmlFor="new-trip-destination">Destination</label>
+        <Input
+          id="new-trip-destination"
           type="text"
           placeholder="Destination"
           value={newTripDestination}
           onChange={(e) => setNewTripDestination(e.target.value)}
-          className={inputStyles}
+          className="flex-1 min-w-[140px]"
           required
         />
-        <input
+        <label className="sr-only" htmlFor="new-trip-start-date">Start date</label>
+        <Input
+          id="new-trip-start-date"
           type="date"
           value={newTripStartDate}
           onChange={(e) => setNewTripStartDate(e.target.value)}
-          className={inputStyles}
+          className="flex-1 min-w-[140px]"
           required
         />
-        <input
+        <label className="sr-only" htmlFor="new-trip-end-date">End date</label>
+        <Input
+          id="new-trip-end-date"
           type="date"
           value={newTripEndDate}
           onChange={(e) => setNewTripEndDate(e.target.value)}
-          className={inputStyles}
+          className="flex-1 min-w-[140px]"
           required
         />
-        <input
+        <label className="sr-only" htmlFor="new-trip-image-url">Image URL (optional)</label>
+        <Input
+          id="new-trip-image-url"
           type="url"
           placeholder="Image URL (optional)"
           value={newTripImageUrl}
           onChange={(e) => setNewTripImageUrl(e.target.value)}
-          className={inputStyles}
+          className="flex-1 min-w-[140px]"
         />
-        <button
-          type="submit"
-          className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700"
-        >
-          Add Trip
-        </button>
+        <Button type="submit">Add Trip</Button>
       </form>
       {addTripError && <p className="text-sm text-red-600 mb-6">{addTripError}</p>}
 

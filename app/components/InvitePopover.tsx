@@ -1,6 +1,8 @@
 "use client";
 
 import { TripMember } from "../types";
+import Button from "./ui/Button";
+import { inputBaseStyles } from "./ui/Input";
 import { useState } from "react";
 
 function parseEmails(raw: string): string[] {
@@ -74,22 +76,20 @@ export default function InvitePopover({
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
-        <div className="text-sm font-semibold text-gray-900 mb-2">Invite by email</div>
+        <label className="text-sm font-semibold text-gray-900 mb-2 block" htmlFor="invite-emails">
+          Invite by email
+        </label>
         <form onSubmit={handleInvite} className="flex flex-col gap-2">
           <textarea
+            id="invite-emails"
             value={emailsInput}
             onChange={(e) => setEmailsInput(e.target.value)}
             placeholder="Email addresses, separated by commas or new lines"
             rows={2}
-            className="border border-gray-300 rounded px-3 py-1.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-gray-400"
+            className={`${inputBaseStyles} resize-none`}
             required
           />
-          <button
-            type="submit"
-            className="bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-gray-700 self-start"
-          >
-            Invite
-          </button>
+          <Button type="submit" size="sm" className="self-start">Invite</Button>
         </form>
         {successMessage && <p className="text-sm text-green-700 mt-2">{successMessage}</p>}
         {errors.map((e, i) => (

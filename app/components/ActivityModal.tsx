@@ -2,6 +2,8 @@
 
 import { Activity } from "../types";
 import { toDateInputValue, toTimeInputValue } from "@/lib/dates";
+import Button from "./ui/Button";
+import Input from "./ui/Input";
 import { useState } from "react";
 
 // One modal for both create and edit: pass `activity` to edit it (PATCHes
@@ -55,8 +57,6 @@ export default function ActivityModal({
     });
   }
 
-  const inputStyles =
-    "border border-gray-300 rounded px-3 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gray-400";
   const labelStyles = "text-xs font-medium text-gray-500 mt-2";
 
   return (
@@ -78,42 +78,39 @@ export default function ActivityModal({
           </div>
           <form onSubmit={handleSubmit} className="flex flex-col gap-1">
             <label className={labelStyles}>Title</label>
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={inputStyles} required />
+            <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="w-full" required />
 
             <label className={labelStyles}>Description</label>
-            <input
+            <Input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className={inputStyles}
+              className="w-full"
             />
 
             <label className={labelStyles}>Date</label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputStyles} />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full" />
 
             <label className={labelStyles}>Start time</label>
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputStyles} />
+            <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full" />
 
             <label className={labelStyles}>End time</label>
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputStyles} />
+            <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full" />
 
             <label className={labelStyles}>Location</label>
-            <input
+            <Input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className={inputStyles}
+              className="w-full"
             />
 
             <label className={labelStyles}>URL</label>
-            <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} className={inputStyles} />
+            <Input type="text" value={url} onChange={(e) => setUrl(e.target.value)} className="w-full" />
 
-            <button
-              type="submit"
-              className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700 mt-3"
-            >
+            <Button type="submit" className="mt-3">
               {activity ? "Save Changes" : "Add Activity"}
-            </button>
+            </Button>
           </form>
           {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
         </div>
