@@ -2,6 +2,7 @@
 
 import { Activity } from "../types";
 import ActivityListItem from "./ActivityListItem";
+import ActivityModal from "./ActivityModal";
 import { toDateInputValue } from "@/lib/dates";
 import { useState } from "react";
 
@@ -19,11 +20,12 @@ function tripDayKeys(startDate: Date, endDate: Date): string[] {
   return days;
 }
 
-function formatDayHeading(dayKey: string): string {
-  return new Date(`${dayKey}T00:00:00Z`).toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "short",
+function formatDayHeading(dayKey: string, showMonth: boolean): string {
+  const d = new Date(`${dayKey}T00:00:00Z`);
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
     day: "numeric",
+    month: showMonth ? "short" : undefined,
     timeZone: "UTC",
   });
 }
@@ -46,6 +48,7 @@ export default function TripCalendar({
   onActivityDelete: (id: number) => void;
 }) {
   const days = tripDayKeys(startDate, endDate);
+  const [showAddActivity, setShowAddActivity] = useState(false);
 
   const activitiesByDay: Record<string, Activity[]> = {};
   const unscheduled: Activity[] = [];
@@ -65,68 +68,26 @@ export default function TripCalendar({
     });
   }
 
-  const [newActivityTitle, setNewActivityTitle] = useState("");
-  const [newActivityDescription, setNewActivityDescription] = useState("");
-  const [newActivityDate, setNewActivityDate] = useState("");
-  const [newActivityStartTime, setNewActivityStartTime] = useState("");
-  const [newActivityEndTime, setNewActivityEndTime] = useState("");
-  const [newActivityLocation, setNewActivityLocation] = useState("");
-  const [newActivityUrl, setNewActivityUrl] = useState("");
-
-  async function handleAddActivity(e: React.SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const response = await fetch(`/api/trips/${tripId}/activities`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: newActivityTitle,
-        description: newActivityDescription,
-        date: newActivityDate,
-        startTime: newActivityStartTime,
-        endTime: newActivityEndTime,
-        location: newActivityLocation,
-        url: newActivityUrl,
-      }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to add activity:", error);
-      return;
-    }
-    const newActivity = await response.json();
-
-    // date/startTime/endTime are optional — `new Date(null)` silently
-    // becomes the 1970 epoch instead of staying null, so guard each one.
-    onActivityAdd({
-      ...newActivity,
-      date: newActivity.date ? new Date(newActivity.date) : null,
-      startTime: newActivity.startTime ? new Date(newActivity.startTime) : null,
-      endTime: newActivity.endTime ? new Date(newActivity.endTime) : null,
-    });
-
-    setNewActivityTitle("");
-    setNewActivityDescription("");
-    setNewActivityDate("");
-    setNewActivityStartTime("");
-    setNewActivityEndTime("");
-    setNewActivityLocation("");
-    setNewActivityUrl("");
-  }
-
-  const inputStyles =
-    "border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-[120px] focus:outline-none focus:ring-2 focus:ring-gray-400";
-  const sectionHeaderStyles = "text-lg font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200";
-
   return (
     <div>
-      <h2 className={sectionHeaderStyles}>Itinerary</h2>
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-900">Itinerary</h2>
+        <button
+          onClick={() => setShowAddActivity(true)}
+          className="bg-gray-900 text-white text-sm font-medium px-3 py-1.5 rounded hover:bg-gray-700"
+        >
+          + Add Activity
+        </button>
+      </div>
 
-      <div className="space-y-3 mb-4">
-        {days.map((day) => (
-          <div key={day} className="border border-gray-200 rounded-lg p-3">
-            <div className="text-sm font-semibold text-gray-900 mb-2">{formatDayHeading(day)}</div>
+      <div className="grid grid-cols-7 gap-3 mb-4">
+        {days.map((day, i) => (
+          <div key={day} className="border border-gray-200 rounded-lg p-3 min-h-[220px] bg-gray-50">
+            <div className="text-sm font-semibold text-gray-900 mb-2">
+              {formatDayHeading(day, i === 0 || day.endsWith("-01"))}
+            </div>
             {activitiesByDay[day]?.length ? (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {activitiesByDay[day].map((activity) => (
                   <ActivityListItem
                     key={activity.id}
@@ -137,7 +98,7 @@ export default function TripCalendar({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-400">No activities planned</p>
+              <p className="text-[11px] text-gray-400">No activities</p>
             )}
           </div>
         ))}
@@ -159,57 +120,17 @@ export default function TripCalendar({
         </div>
       )}
 
-      <form onSubmit={handleAddActivity} className="flex flex-wrap gap-2 p-4 border border-gray-200 rounded-lg bg-gray-50">
-        <input
-          type="text" value={newActivityTitle}
-          placeholder="Title"
-          onChange={(e) => setNewActivityTitle(e.target.value)}
-          className={inputStyles}
-          required
+      {showAddActivity && (
+        <ActivityModal
+          tripId={tripId}
+          defaultDate={toDateInputValue(startDate)}
+          onSave={(newActivity) => {
+            onActivityAdd(newActivity);
+            setShowAddActivity(false);
+          }}
+          onClose={() => setShowAddActivity(false)}
         />
-        <input
-          type="text" value={newActivityDescription}
-          placeholder="Description"
-          onChange={(e) => setNewActivityDescription(e.target.value)}
-          className={inputStyles}
-        />
-        <input
-          type="date" value={newActivityDate}
-          placeholder="Date"
-          onChange={(e) => setNewActivityDate(e.target.value)}
-          className={inputStyles}
-        />
-        <input
-          type="time" value={newActivityStartTime}
-          placeholder="Start time"
-          onChange={(e) => setNewActivityStartTime(e.target.value)}
-          className={inputStyles}
-        />
-        <input
-          type="time" value={newActivityEndTime}
-          placeholder="End time"
-          onChange={(e) => setNewActivityEndTime(e.target.value)}
-          className={inputStyles}
-        />
-        <input
-          type="text" value={newActivityLocation}
-          placeholder="Location"
-          onChange={(e) => setNewActivityLocation(e.target.value)}
-          className={inputStyles}
-        />
-        <input
-          type="text" value={newActivityUrl}
-          placeholder="URL"
-          onChange={(e) => setNewActivityUrl(e.target.value)}
-          className={inputStyles}
-        />
-        <button
-          type="submit"
-          className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700"
-        >
-          Add Activity
-        </button>
-      </form>
+      )}
     </div>
   );
 }

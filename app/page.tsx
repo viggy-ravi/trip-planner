@@ -4,12 +4,19 @@ import { auth } from "@/lib/auth";
 
 export default async function Home() {
   const session = await auth();
+  const userId = Number(session?.user?.id);
+  const isAdmin = !!session?.user?.isAdmin;
 
-  const trips = await prisma.trip.findMany(
-    session?.user?.isAdmin
-      ? undefined
-      : { where: { members: { some: { userId: Number(session?.user?.id) } } } }
-  );
+  const trips = await prisma.trip.findMany({
+    where: isAdmin ? undefined : { members: { some: { userId } } },
+    include: { members: { where: { userId }, select: { role: true } } },
+    orderBy: { startDate: "asc" },
+  });
 
-  return <TripsPage initialTrips={trips} />;
+  const tripsWithCanManage = trips.map(({ members, ...trip }) => ({
+    ...trip,
+    canManage: isAdmin || members[0]?.role === "OWNER",
+  }));
+
+  return <TripsPage initialTrips={tripsWithCanManage} />;
 }

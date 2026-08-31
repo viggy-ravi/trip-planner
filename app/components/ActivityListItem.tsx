@@ -1,8 +1,14 @@
 "use client";
 
 import { Activity } from "../types";
-import { toDateInputValue, toTimeInputValue } from "@/lib/dates";
+import { PencilIcon, TrashIcon } from "./Icons";
+import ActivityModal from "./ActivityModal";
 import { useState } from "react";
+
+function formatTime(time: Date | null): string {
+  if (!time) return "";
+  return time.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: "UTC" });
+}
 
 export default function ActivityListItem({
   activity,
@@ -15,36 +21,6 @@ export default function ActivityListItem({
 }) {
   const [isEditing, setIsEditing] = useState(false);
 
-  const [title, setTitle] = useState(activity.title);
-  const [description, setDescription] = useState(activity.description ?? "");
-  const [date, setDate] = useState(toDateInputValue(activity.date));
-  const [startTime, setStartTime] = useState(toTimeInputValue(activity.startTime));
-  const [endTime, setEndTime] = useState(toTimeInputValue(activity.endTime));
-  const [location, setLocation] = useState(activity.location ?? "");
-  const [url, setUrl] = useState(activity.url ?? "");
-
-  async function handleEditActivity(e: React.SubmitEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const response = await fetch(`/api/activities/${activity.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, date, startTime, endTime, location, url }),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("Failed to update activity:", error);
-      return;
-    }
-    const updatedActivity = await response.json();
-    onUpdate({
-      ...updatedActivity,
-      date: updatedActivity.date ? new Date(updatedActivity.date) : null,
-      startTime: updatedActivity.startTime ? new Date(updatedActivity.startTime) : null,
-      endTime: updatedActivity.endTime ? new Date(updatedActivity.endTime) : null,
-    });
-    setIsEditing(false);
-  }
-
   async function handleDeleteActivity(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const response = await fetch(`/api/activities/${activity.id}`, { method: "DELETE" });
@@ -55,50 +31,48 @@ export default function ActivityListItem({
     onDelete(activity.id);
   }
 
-  const inputStyles =
-    "border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-[120px] focus:outline-none focus:ring-2 focus:ring-gray-400";
-
-  if (isEditing) {
-    return (
-      <li className="border border-gray-200 rounded-lg p-3">
-        <form onSubmit={handleEditActivity} className="flex flex-wrap gap-2">
-          <input type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className={inputStyles} />
-          <input type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className={inputStyles} />
-          <input type="date" placeholder="Date" value={date} onChange={(e) => setDate(e.target.value)} className={inputStyles} />
-          <input type="time" placeholder="Start time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className={inputStyles} />
-          <input type="time" placeholder="End time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputStyles} />
-          <input type="text" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} className={inputStyles} />
-          <input type="text" placeholder="URL" value={url} onChange={(e) => setUrl(e.target.value)} className={inputStyles} />
-          <button
-            type="submit"
-            className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700"
-          >
-            Save
-          </button>
-        </form>
-      </li>
-    );
-  }
-
   return (
-    <li className="border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between gap-2">
-      <span className="text-sm text-gray-900">
-        {activity.title}
-        {activity.location && <span className="text-gray-500"> — {activity.location}</span>}
-      </span>
-      <span className="flex items-center gap-3 shrink-0">
-        <button
-          onClick={() => setIsEditing(true)}
-          className="text-xs text-gray-500 hover:text-gray-900"
+    <li className="relative border border-gray-200 rounded-lg p-2.5 bg-white group">
+      <span className="text-xs font-medium text-gray-900 break-words block pr-1">{activity.title}</span>
+      {(activity.startTime || activity.location) && (
+        <div className="text-[11px] text-gray-500 mt-0.5">
+          {formatTime(activity.startTime)}
+          {activity.startTime && activity.location && " · "}
+          {activity.location}
+        </div>
+      )}
+      {activity.url && (
+        <a
+          href={activity.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] text-blue-600 hover:underline block mt-0.5 truncate"
         >
-          Edit
+          {activity.url}
+        </a>
+      )}
+      {/* `hidden` (not opacity) so these take up no layout space until hovered. */}
+      <span className="hidden group-hover:flex items-center gap-0.5 absolute top-1 right-1 bg-white/95 rounded-full">
+        <button onClick={() => setIsEditing(true)} aria-label="Edit activity" className="text-gray-400 hover:text-gray-900 p-1">
+          <PencilIcon className="w-3 h-3" />
         </button>
-        <form onSubmit={handleDeleteActivity} className="inline">
-          <button type="submit" className="text-xs text-red-600 hover:text-red-800">
-            Delete
+        <form onSubmit={handleDeleteActivity}>
+          <button type="submit" aria-label="Delete activity" className="text-gray-400 hover:text-red-600 p-1">
+            <TrashIcon className="w-3 h-3" />
           </button>
         </form>
       </span>
+
+      {isEditing && (
+        <ActivityModal
+          activity={activity}
+          onSave={(updated) => {
+            onUpdate(updated);
+            setIsEditing(false);
+          }}
+          onClose={() => setIsEditing(false)}
+        />
+      )}
     </li>
   );
 }

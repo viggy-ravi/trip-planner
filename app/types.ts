@@ -5,6 +5,7 @@ export interface Trip {
   startDate: Date;
   endDate: Date;
   imageUrl: string | null;
+  allowMemberInvites: boolean;
 }
 
 export interface Activity {

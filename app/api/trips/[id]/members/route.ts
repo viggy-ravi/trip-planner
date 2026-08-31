@@ -25,42 +25,51 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         { status: 403 }
       );
     }
+
+    if (membership.role !== "OWNER") {
+      const trip = await prisma.trip.findUnique({ where: { id: tripId }, select: { allowMemberInvites: true } });
+      if (!trip?.allowMemberInvites) {
+        return NextResponse.json(
+          { error: "Only the trip owner can invite collaborators right now" },
+          { status: 403 }
+        );
+      }
+    }
   }
 
   const body = await request.json();
+  const emails: string[] = body.emails ?? (body.email ? [body.email] : []);
 
-  if (!body.email) {
-    return NextResponse.json({ error: "email is required" }, { status: 400 });
+  if (emails.length === 0) {
+    return NextResponse.json({ error: "At least one email is required" }, { status: 400 });
   }
 
-  const invitedUser = await prisma.user.findUnique({
-    where: { email: body.email },
-  });
+  const invited = [];
+  const errors: { email: string; error: string }[] = [];
 
-  if (!invitedUser) {
-    return NextResponse.json(
-      { error: "No account found with this email — ask them to sign up first" },
-      { status: 404 }
-    );
+  for (const email of emails) {
+    const invitedUser = await prisma.user.findUnique({ where: { email } });
+
+    if (!invitedUser) {
+      errors.push({ email, error: "No account found — ask them to sign up first" });
+      continue;
+    }
+
+    const existingMembership = await prisma.tripMember.findUnique({
+      where: { tripId_userId: { tripId, userId: invitedUser.id } },
+    });
+
+    if (existingMembership) {
+      errors.push({ email, error: "Already a member of this trip" });
+      continue;
+    }
+
+    const member = await prisma.tripMember.create({
+      data: { tripId, userId: invitedUser.id, role: "COLLABORATOR" },
+      include: { user: { select: { id: true, name: true, email: true } } },
+    });
+    invited.push(member);
   }
 
-  const existingMembership = await prisma.tripMember.findUnique({
-    where: {
-      tripId_userId: { tripId, userId: invitedUser.id },
-    },
-  });
-
-  if (existingMembership) {
-    return NextResponse.json(
-      { error: "This user is already a member of this trip" },
-      { status: 409 }
-    );
-  }
-
-  const member = await prisma.tripMember.create({
-    data: { tripId, userId: invitedUser.id, role: "COLLABORATOR" },
-    include: { user: { select: { id: true, name: true, email: true } } },
-  });
-
-  return NextResponse.json(member, { status: 201 });
+  return NextResponse.json({ invited, errors }, { status: 200 });
 }

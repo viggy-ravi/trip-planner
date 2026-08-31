@@ -45,5 +45,5 @@ export default async function TripDetailPage({
     return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-600">Trip not found.</div>;
   }
 
-  return <TripDetail trip={trip} canDelete={isOwner} />;
+  return <TripDetail trip={trip} isOwner={isOwner} />;
 }

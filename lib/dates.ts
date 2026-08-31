@@ -11,7 +11,11 @@ export function toDateOrNull(value: string | undefined): Date | null | undefined
 // which need a placeholder date prefix before `new Date(...)` can parse them.
 export function toTimeOrNull(value: string | undefined): Date | null | undefined {
   if (value === undefined) return undefined;
-  return value ? new Date(`1970-01-01T${value}`) : null;
+  // The trailing Z is required — without it, a date-time string with no
+  // offset is parsed in the *server's* local timezone (not UTC), so the
+  // stored time silently drifted from what was actually typed depending on
+  // where the server happened to be running.
+  return value ? new Date(`1970-01-01T${value}Z`) : null;
 }
 
 // The reverse direction: formats a Date (or null) back into the plain

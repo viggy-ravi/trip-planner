@@ -4,8 +4,10 @@ import { Trip } from "../types";
 import TripListItem from "./TripListItem";
 import { useState } from "react";
 
-export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
-  const [trips, setTrips] = useState<Trip[]>(initialTrips);
+type TripWithCanManage = Trip & { canManage: boolean };
+
+export default function TripsPage({ initialTrips }: { initialTrips: TripWithCanManage[] }) {
+  const [trips, setTrips] = useState<TripWithCanManage[]>(initialTrips);
 
   const [newTripName, setNewTripName] = useState("");
   const [newTripDestination, setNewTripDestination] = useState("");
@@ -42,6 +44,7 @@ export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
         ...newTrip,
         startDate: new Date(newTrip.startDate),
         endDate: new Date(newTrip.endDate),
+        canManage: true, // creating a trip always makes you its OWNER
       },
     ]);
     setNewTripName("");
@@ -51,8 +54,18 @@ export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
     setNewTripImageUrl("");
   }
 
+  function handleTripUpdate(updated: Trip) {
+    setTrips(trips.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)));
+  }
+
+  function handleTripDelete(id: number) {
+    setTrips(trips.filter((t) => t.id !== id));
+  }
+
   const inputStyles =
     "border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-gray-400";
+
+  const sortedTrips = [...trips].sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -109,8 +122,14 @@ export default function TripsPage({ initialTrips }: { initialTrips: Trip[] }) {
       {addTripError && <p className="text-sm text-red-600 mb-6">{addTripError}</p>}
 
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {trips.map((trip) => (
-          <TripListItem key={trip.id} trip={trip} />
+        {sortedTrips.map((trip) => (
+          <TripListItem
+            key={trip.id}
+            trip={trip}
+            canManage={trip.canManage}
+            onUpdate={handleTripUpdate}
+            onDelete={handleTripDelete}
+          />
         ))}
       </ul>
     </div>
