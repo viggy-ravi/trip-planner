@@ -38,6 +38,12 @@ jobs:
 
       - run: npm ci
 
+      - name: Generate Next.js route types
+        # tsc depends on globals like LayoutProps that Next only generates
+        # into .next/types after next dev/build/typegen has run once — a
+        # fresh checkout has no .next dir, so typecheck fails without this.
+        run: npx next typegen
+
       - name: Typecheck
         run: npx tsc --noEmit
 
