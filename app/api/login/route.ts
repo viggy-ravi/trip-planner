@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
+  if (isRateLimited(getClientIp(request))) {
+    return NextResponse.json({ error: "Too many attempts, try again shortly" }, { status: 429 });
+  }
+
   const body = await request.json();
 
   if (!body.email || !body.password) {
@@ -25,7 +31,7 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
-    throw error;
+    return handleApiError(error);
   }
 
   return NextResponse.json({ success: true });

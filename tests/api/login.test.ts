@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
+import { resetRateLimiter } from "@/lib/rate-limit";
 
 // Real credential verification (bcrypt compare against the DB) lives inside
 // next-auth's Credentials provider `authorize()` callback, which can't run
@@ -12,6 +13,7 @@ import { signIn } from "@/lib/auth";
 // here.
 beforeEach(() => {
   vi.mocked(signIn).mockReset();
+  resetRateLimiter();
 });
 
 function postLogin(body: unknown) {
@@ -41,8 +43,21 @@ describe("POST /api/login", () => {
     expect(response.status).toBe(200);
   });
 
-  it("rethrows a non-AuthError instead of swallowing it as a login failure", async () => {
+  it("500s (without leaking the raw error) when signIn fails for a non-auth reason", async () => {
     vi.mocked(signIn).mockRejectedValue(new Error("db connection lost"));
-    await expect(postLogin({ email: "a@test.local", password: "x" })).rejects.toThrow("db connection lost");
+    const response = await postLogin({ email: "a@test.local", password: "x" });
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error).not.toMatch(/db connection lost/);
+  });
+
+  it("429s past the attempt cap for one IP", async () => {
+    vi.mocked(signIn).mockResolvedValue(undefined as never);
+    for (let i = 0; i < 10; i++) {
+      const response = await postLogin({ email: "a@test.local", password: "x" });
+      expect(response.status).not.toBe(429);
+    }
+    const eleventh = await postLogin({ email: "a@test.local", password: "x" });
+    expect(eleventh.status).toBe(429);
   });
 });

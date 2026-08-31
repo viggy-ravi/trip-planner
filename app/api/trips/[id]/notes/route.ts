@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { requireTripMember } from "@/lib/authz";
+import { handleApiError } from "@/lib/api-error";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
   const { id } = await params;
   const id_num: number = +id;
+
+  const authError = await requireTripMember(session, id_num);
+  if (authError) return authError;
 
   const body = await request.json();
 
@@ -21,14 +21,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const note = await prisma.note.create({
-    data: {
-      tripId: id_num,
-      content: body.content,
-      authorId: Number(session.user.id),
-    },
-    include: { author: { select: { id: true, name: true, email: true } } },
-  });
+  try {
+    const note = await prisma.note.create({
+      data: {
+        tripId: id_num,
+        content: body.content,
+        authorId: Number(session!.user!.id),
+      },
+      include: { author: { select: { id: true, name: true, email: true } } },
+    });
 
-  return NextResponse.json(note, { status: 201 });
+    return NextResponse.json(note, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

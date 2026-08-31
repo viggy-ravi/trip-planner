@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -18,18 +19,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const trip = await prisma.trip.create({
-    data: {
-      name: body.name,
-      destination: body.destination,
-      startDate: new Date(body.startDate),
-      endDate: new Date(body.endDate),
-      imageUrl: body.imageUrl || null,
-      members: {
-        create: { userId: Number(session.user.id), role: "OWNER" },
+  try {
+    const trip = await prisma.trip.create({
+      data: {
+        name: body.name,
+        destination: body.destination,
+        startDate: new Date(body.startDate),
+        endDate: new Date(body.endDate),
+        imageUrl: body.imageUrl || null,
+        members: {
+          create: { userId: Number(session.user.id), role: "OWNER" },
+        },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(trip, { status: 201 });
+    return NextResponse.json(trip, { status: 201 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }

@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { resetDb } from "../helpers/db";
+import { resetRateLimiter } from "@/lib/rate-limit";
 
 beforeEach(async () => {
   await resetDb();
+  resetRateLimiter();
 });
 
 function postRegister(body: unknown) {
@@ -34,5 +36,24 @@ describe("POST /api/register", () => {
     await postRegister({ name: "Ada", email: "ada@test.local", password: "password123" });
     const response = await postRegister({ name: "Ada Two", email: "ada@test.local", password: "password456" });
     expect(response.status).toBe(409);
+  });
+
+  it("400s on a malformed email", async () => {
+    const response = await postRegister({ name: "Ada", email: "not-an-email", password: "password123" });
+    expect(response.status).toBe(400);
+  });
+
+  it("400s on a too-short password", async () => {
+    const response = await postRegister({ name: "Ada", email: "ada@test.local", password: "short" });
+    expect(response.status).toBe(400);
+  });
+
+  it("429s past the attempt cap for one IP", async () => {
+    for (let i = 0; i < 10; i++) {
+      const response = await postRegister({ name: "Ada", email: `ada${i}@test.local`, password: "password123" });
+      expect(response.status).not.toBe(429);
+    }
+    const eleventh = await postRegister({ name: "Ada", email: "ada-11@test.local", password: "password123" });
+    expect(eleventh.status).toBe(429);
   });
 });

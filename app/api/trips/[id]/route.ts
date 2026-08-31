@@ -1,32 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import type { Session } from "next-auth";
-
-// Shared by PATCH and DELETE: only the trip's OWNER or a site admin may
-// edit/delete a trip. Returns null when allowed, or the error response to
-// return immediately when not.
-async function requireOwnerOrAdmin(
-  session: Session | null,
-  tripId: number
-): Promise<NextResponse | null> {
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-  if (session.user.isAdmin) return null;
-
-  const membership = await prisma.tripMember.findUnique({
-    where: { tripId_userId: { tripId, userId: Number(session.user.id) } },
-  });
-
-  if (membership?.role !== "OWNER") {
-    return NextResponse.json(
-      { error: "Only the trip owner or an admin can do this" },
-      { status: 403 }
-    );
-  }
-  return null;
-}
+import { requireOwnerOrAdmin } from "@/lib/authz";
+import { handleApiError } from "@/lib/api-error";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -36,9 +12,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const authError = await requireOwnerOrAdmin(session, id_num);
   if (authError) return authError;
 
-  await prisma.trip.delete({ where: { id: id_num } })
-
-  return new NextResponse(null, { status: 204 });
+  try {
+    await prisma.trip.delete({ where: { id: id_num } })
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -64,22 +43,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     );
   }
 
-  const updatedTrip = await prisma.trip.update({
-    where: {
-      id: id_num,
-    },
-    data: {
-      ...(isFullEdit && {
-        name: body.name,
-        destination: body.destination,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        imageUrl: body.imageUrl || null,
-      }),
-      ...(body.allowMemberInvites !== undefined && { allowMemberInvites: body.allowMemberInvites }),
-    },
-  })
+  try {
+    const updatedTrip = await prisma.trip.update({
+      where: {
+        id: id_num,
+      },
+      data: {
+        ...(isFullEdit && {
+          name: body.name,
+          destination: body.destination,
+          startDate: new Date(body.startDate),
+          endDate: new Date(body.endDate),
+          imageUrl: body.imageUrl || null,
+        }),
+        ...(body.allowMemberInvites !== undefined && { allowMemberInvites: body.allowMemberInvites }),
+      },
+    })
 
-  return NextResponse.json(updatedTrip, { status: 200 });
+    return NextResponse.json(updatedTrip, { status: 200 });
+  } catch (error) {
+    return handleApiError(error);
+  }
 }
 
