@@ -18,16 +18,33 @@ export default function AuthHeader({
 
   if (!user) {
     return (
-      <nav>
-        <Link href="/login">Log In</Link> <Link href="/signup">Sign Up</Link>
+      <nav className="border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between">
+        <Link href="/" className="font-semibold text-gray-900">
+          Trip Planner
+        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/login" className="text-gray-600 hover:text-gray-900">
+            Log In
+          </Link>
+          <Link href="/signup" className="text-gray-600 hover:text-gray-900">
+            Sign Up
+          </Link>
+        </div>
       </nav>
     );
   }
 
   return (
-    <nav>
-      <span>Logged in as {user.name}</span>{" "}
-      <button onClick={handleLogout}>Log Out</button>
+    <nav className="border-b border-gray-200 bg-white px-4 py-3 flex items-center justify-between">
+      <Link href="/" className="font-semibold text-gray-900">
+        Trip Planner
+      </Link>
+      <div className="flex items-center gap-4 text-sm">
+        <span className="text-gray-600">Logged in as {user.name}</span>
+        <button onClick={handleLogout} className="text-gray-600 hover:text-gray-900">
+          Log Out
+        </button>
+      </div>
     </nav>
   );
 }

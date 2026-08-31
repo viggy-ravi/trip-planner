@@ -22,7 +22,7 @@ export default async function TripDetailPage({
     });
 
     if (!membership) {
-      return <div>Trip not found.</div>;
+      return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-600">Trip not found.</div>;
     }
 
     isOwner = membership.role === "OWNER";
@@ -42,7 +42,7 @@ export default async function TripDetailPage({
   });
 
   if (!trip) {
-    return <div>Trip not found.</div>;
+    return <div className="max-w-2xl mx-auto px-4 py-8 text-gray-600">Trip not found.</div>;
   }
 
   return <TripDetail trip={trip} canDelete={isOwner} />;

@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       destination: body.destination,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
+      imageUrl: body.imageUrl || null,
       members: {
         create: { userId: Number(session.user.id), role: "OWNER" },
       },

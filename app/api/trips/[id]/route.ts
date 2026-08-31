@@ -54,6 +54,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       destination: body.destination,
       startDate: new Date(body.startDate),
       endDate: new Date(body.endDate),
+      imageUrl: body.imageUrl || null,
     },
   })
 

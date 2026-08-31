@@ -1,10 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { Trip, Activity, Note, TripMember } from "../types";
-import ActivityListItem from "./ActivityListItem";
-import NoteListItem from "./NoteListItem";
+import TripCalendar from "./TripCalendar";
+import NotesSidebar from "./NotesSidebar";
+import TripSettingsPanel from "./TripSettingsPanel";
+import InvitePopover from "./InvitePopover";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+function formatDate(dateStr: string): string {
+    return new Date(`${dateStr}T00:00:00Z`).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+    });
+}
 
 export default function TripDetail({
     trip,
@@ -34,20 +46,30 @@ export default function TripDetail({
     const [destination, setDestination] = useState(trip.destination);
     const [startDate, setStartDate] = useState(trip.startDate.toISOString().split("T")[0]);
     const [endDate, setEndDate] = useState(trip.endDate.toISOString().split("T")[0]);
-    const [isEditing, setIsEditing] = useState(false);
+    const [imageUrl, setImageUrl] = useState(trip.imageUrl ?? "");
+    const [showSettings, setShowSettings] = useState(false);
+    const [showInvite, setShowInvite] = useState(false);
 
     async function handleEditTrip(e: React.SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
-        const response = await fetch(`/api/trips/${trip.id}`, { 
+        const response = await fetch(`/api/trips/${trip.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, destination, startDate, endDate }),
+            body: JSON.stringify({ name, destination, startDate, endDate, imageUrl }),
         });
-        const updatedTrip = await response.json();
-        setIsEditing(false); 
+        if (!response.ok) {
+            const error = await response.json();
+            console.error("Failed to update trip:", error);
+            return;
+        }
+        setShowSettings(false);
     }
 
     const [activities, setActivities] = useState<Activity[]>(trip.activities);
+
+    function handleActivityAdd(newActivity: Activity) {
+        setActivities([...activities, newActivity]);
+    }
 
     function handleActivityUpdate(updated: Activity) {
         setActivities(activities.map((a) => (a.id === updated.id ? updated : a)));
@@ -57,58 +79,11 @@ export default function TripDetail({
         setActivities(activities.filter((a) => a.id !== id));
     }
 
-    const [newActivityTitle, setNewActivityTitle] = useState("");
-    const [newActivityDescription, setNewActivityDescription] = useState("");
-    const [newActivityDate, setNewActivityDate] = useState("");
-    const [newActivityStartTime, setNewActivityStartTime] = useState("");
-    const [newActivityEndTime, setNewActivityEndTime] = useState("");
-    const [newActivityLocation, setNewActivityLocation] = useState("");
-    const [newActivityUrl, setNewActivityUrl] = useState("");
-
-    async function handleAddActivity(e: React.SubmitEvent<HTMLFormElement>) {
-        e.preventDefault();
-        const response = await fetch(`/api/trips/${trip.id}/activities`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title: newActivityTitle,
-                description: newActivityDescription,
-                date: newActivityDate,
-                startTime: newActivityStartTime,
-                endTime: newActivityEndTime,
-                location: newActivityLocation,
-                url: newActivityUrl,
-            }),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            console.error("Failed to add activity:", error);
-            return;
-        }
-        const newActivity = await response.json();
-
-        // date/startTime/endTime are optional — `new Date(null)` silently
-        // becomes the 1970 epoch instead of staying null, so guard each one.
-        setActivities([
-            ...activities,
-            {
-                ...newActivity,
-                date: newActivity.date ? new Date(newActivity.date) : null,
-                startTime: newActivity.startTime ? new Date(newActivity.startTime) : null,
-                endTime: newActivity.endTime ? new Date(newActivity.endTime) : null,
-            },
-        ]);
-
-        setNewActivityTitle("");
-        setNewActivityDescription("");
-        setNewActivityDate("");
-        setNewActivityStartTime("");
-        setNewActivityEndTime("");
-        setNewActivityLocation("");
-        setNewActivityUrl("");
-    }
-
     const [notes, setNotes] = useState<Note[]>(trip.notes);
+
+    function handleNoteAdd(newNote: Note) {
+        setNotes([...notes, newNote]);
+    }
 
     function handleNoteUpdate(updated: Note) {
         setNotes(notes.map((n) => (n.id === updated.id ? updated : n)));
@@ -118,175 +93,100 @@ export default function TripDetail({
         setNotes(notes.filter((n) => n.id !== id));
     }
 
-    const [newNoteContent, setNewNoteContent] = useState("");
-
-    async function handleAddNote(e: React.SubmitEvent<HTMLFormElement>) {
-        e.preventDefault();
-        const response = await fetch(`/api/trips/${trip.id}/notes`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content: newNoteContent }),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            console.error("Failed to add note:", error);
-            return;
-        }
-        const newNote = await response.json();
-        setNotes([...notes, newNote]);
-        setNewNoteContent("");
-    }
-
     const [members, setMembers] = useState<TripMember[]>(trip.members);
-    const [inviteEmail, setInviteEmail] = useState("");
-    const [inviteError, setInviteError] = useState("");
 
-    async function handleInvite(e: React.SubmitEvent<HTMLFormElement>) {
-        e.preventDefault();
-        setInviteError("");
-        const response = await fetch(`/api/trips/${trip.id}/members`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: inviteEmail }),
-        });
-        if (!response.ok) {
-            const error = await response.json();
-            setInviteError(error.error ?? "Failed to invite collaborator");
-            return;
-        }
-        const newMember = await response.json();
+    function handleMemberInvited(newMember: TripMember) {
         setMembers([...members, newMember]);
-        setInviteEmail("");
+        setShowInvite(false);
     }
 
     return (
-        <div>
-            {isEditing ? (
-                    <form onSubmit={handleEditTrip}>
-                        <input 
-                            type="text" value={name} 
-                            onChange={(e) => setName(e.target.value)} 
-                        />
-                        <input 
-                            type="text" value={destination} 
-                            onChange={(e) => setDestination(e.target.value)} 
-                        />
-                        <input 
-                            type="date" value={startDate} 
-                            onChange={(e) => setStartDate(e.target.value)} 
-                        />
-                        <input 
-                            type="date" value={endDate} 
-                            onChange={(e) => setEndDate(e.target.value)} 
-                        />
-                        <button type="submit">Save</button>
-                    </form>
-                ) : (
-                    <>
-                        <h1>{name}</h1>
-                        <p>{destination}</p>
-                        <p>{new Date(startDate).toLocaleDateString()}</p>
-                        <button onClick={() => setIsEditing(true)}>Edit</button>
-                    </>
-            )}
+        <div className="max-w-6xl mx-auto px-4 py-8">
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-900">
+                ← Back to Trips
+            </Link>
 
-            {canDelete && (
-                <form onSubmit={handleDeleteTrip}>
-                    <button type="submit">Delete Trip</button>
-                </form>
-            )}
-            {deleteError && <p>{deleteError}</p>}
+            <div className="flex items-start justify-between mt-2 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">{name}</h1>
+                    <p className="text-gray-600">{destination}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {formatDate(startDate)} – {formatDate(endDate)}
+                    </p>
+                </div>
 
-            <h2>Members</h2>
-            <ul>
-                {members.map((member) => (
-                    <li key={member.id}>
-                        {member.user.name} ({member.user.email}) — {member.role}
-                    </li>
-                ))}
-            </ul>
+                <div className="flex items-center gap-1">
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowInvite((v) => !v)}
+                            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
+                            aria-label="Invite a collaborator"
+                            title="Invite a collaborator"
+                        >
+                            ✉️
+                        </button>
+                        {showInvite && (
+                            <InvitePopover
+                                tripId={trip.id}
+                                onInvited={handleMemberInvited}
+                                onClose={() => setShowInvite(false)}
+                            />
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-lg"
+                        aria-label="Trip settings"
+                        title="Trip settings"
+                    >
+                        ⚙️
+                    </button>
+                </div>
+            </div>
 
-            <form onSubmit={handleInvite}>
-                <input
-                    type="email" value={inviteEmail}
-                    placeholder="Invite by email"
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                />
-                <button type="submit">Invite</button>
-            </form>
-            {inviteError && <p>{inviteError}</p>}
-
-            <h2>Activities</h2>
-            <ul>
-                {activities.map((activity) => (
-                    <ActivityListItem
-                        key={activity.id}
-                        activity={activity}
-                        onUpdate={handleActivityUpdate}
-                        onDelete={handleActivityDelete}
+            <div className="flex flex-col lg:flex-row gap-6">
+                <div className="flex-1 min-w-0">
+                    <TripCalendar
+                        tripId={trip.id}
+                        startDate={trip.startDate}
+                        endDate={trip.endDate}
+                        activities={activities}
+                        onActivityAdd={handleActivityAdd}
+                        onActivityUpdate={handleActivityUpdate}
+                        onActivityDelete={handleActivityDelete}
                     />
-                ))}
-            </ul>
-
-            <form onSubmit={handleAddActivity}>
-                <input 
-                    type="text" value={newActivityTitle} 
-                    placeholder="Title" 
-                    onChange={(e) => setNewActivityTitle(e.target.value)} 
-                />
-                <input 
-                    type="text" value={newActivityDescription} 
-                    placeholder="Description" 
-                    onChange={(e) => setNewActivityDescription(e.target.value)} 
-                />
-                <input
-                    type="date" value={newActivityDate}
-                    placeholder="Date"
-                    onChange={(e) => setNewActivityDate(e.target.value)}
-                />
-                <input
-                    type="time" value={newActivityStartTime}
-                    placeholder="Start time"
-                    onChange={(e) => setNewActivityStartTime(e.target.value)}
-                />
-                <input
-                    type="time" value={newActivityEndTime}
-                    placeholder="End time"
-                    onChange={(e) => setNewActivityEndTime(e.target.value)}
-                />
-                <input 
-                    type="text" value={newActivityLocation} 
-                    placeholder="Location" 
-                    onChange={(e) => setNewActivityLocation(e.target.value)} 
-                />
-                <input 
-                    type="text" value={newActivityUrl} 
-                    placeholder="URL" 
-                    onChange={(e) => setNewActivityUrl(e.target.value)} 
-                />
-                <button type="submit">Add Activity</button>
-            </form>
-
-            <h2>Notes</h2>
-            <ul>
-                {notes.map((note) => (
-                    <NoteListItem
-                        key={note.id}
-                        note={note}
-                        onUpdate={handleNoteUpdate}
-                        onDelete={handleNoteDelete}
+                </div>
+                <div className="lg:w-72 shrink-0">
+                    <NotesSidebar
+                        tripId={trip.id}
+                        notes={notes}
+                        onNoteAdd={handleNoteAdd}
+                        onNoteUpdate={handleNoteUpdate}
+                        onNoteDelete={handleNoteDelete}
                     />
-                ))}
-            </ul>
+                </div>
+            </div>
 
-            <form onSubmit={handleAddNote}>
-                <input
-                    type="text" value={newNoteContent}
-                    placeholder="Add a note"
-                    onChange={(e) => setNewNoteContent(e.target.value)}
+            {showSettings && (
+                <TripSettingsPanel
+                    name={name}
+                    setName={setName}
+                    destination={destination}
+                    setDestination={setDestination}
+                    startDate={startDate}
+                    setStartDate={setStartDate}
+                    endDate={endDate}
+                    setEndDate={setEndDate}
+                    imageUrl={imageUrl}
+                    setImageUrl={setImageUrl}
+                    onSave={handleEditTrip}
+                    canDelete={canDelete}
+                    onDelete={handleDeleteTrip}
+                    deleteError={deleteError}
+                    members={members}
+                    onClose={() => setShowSettings(false)}
                 />
-                <button type="submit">Add Note</button>
-            </form>
+            )}
         </div>
     );
 }

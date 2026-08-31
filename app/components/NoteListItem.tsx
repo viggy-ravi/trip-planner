@@ -44,26 +44,44 @@ export default function NoteListItem({
 
   if (isEditing) {
     return (
-      <li>
-        <form onSubmit={handleEditNote}>
-          <input type="text" value={content} onChange={(e) => setContent(e.target.value)} />
-          <button type="submit">Save</button>
+      <li className="border border-gray-200 rounded-lg p-3">
+        <form onSubmit={handleEditNote} className="flex gap-2">
+          <input
+            type="text"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-1.5 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-gray-400"
+          />
+          <button
+            type="submit"
+            className="bg-gray-900 text-white text-sm font-medium px-4 py-1.5 rounded hover:bg-gray-700"
+          >
+            Save
+          </button>
         </form>
       </li>
     );
   }
 
   return (
-    <li>
-      {note.content}
-      {" — "}
-      {note.author.name}
-      {" "}
-      <button onClick={() => setIsEditing(true)}>Edit</button>
-      {" "}
-      <form onSubmit={handleDeleteNote} style={{ display: "inline" }}>
-        <button type="submit">Delete</button>
-      </form>
+    <li className="border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between gap-2">
+      <span className="text-sm text-gray-900">
+        {note.content}
+        <span className="text-gray-500"> — {note.author.name}</span>
+      </span>
+      <span className="flex items-center gap-3 shrink-0">
+        <button
+          onClick={() => setIsEditing(true)}
+          className="text-xs text-gray-500 hover:text-gray-900"
+        >
+          Edit
+        </button>
+        <form onSubmit={handleDeleteNote} className="inline">
+          <button type="submit" className="text-xs text-red-600 hover:text-red-800">
+            Delete
+          </button>
+        </form>
+      </span>
     </li>
   );
 }

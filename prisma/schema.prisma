@@ -18,6 +18,7 @@ model Trip {
   destination String
   startDate   DateTime
   endDate     DateTime
+  imageUrl    String?
 
   activities Activity[]
   notes      Note[]

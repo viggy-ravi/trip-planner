@@ -4,6 +4,7 @@ export interface Trip {
   destination: string;
   startDate: Date;
   endDate: Date;
+  imageUrl: string | null;
 }
 
 export interface Activity {
