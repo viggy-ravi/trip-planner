@@ -25,6 +25,18 @@ export async function requireTripMember(
   return null;
 }
 
+// Requires the caller be a site admin. Use for admin-portal actions that
+// aren't scoped to any particular trip.
+export function requireAdmin(session: Session | null): NextResponse | null {
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (!session.user.isAdmin) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+  }
+  return null;
+}
+
 // Requires the caller be the trip's OWNER or a site admin. Use for
 // trip-level ownership actions (edit/delete the trip itself).
 export async function requireOwnerOrAdmin(

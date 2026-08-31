@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function AuthHeader({
   user,
 }: {
-  user: { name?: string | null; email?: string | null } | null;
+  user: { name?: string | null; email?: string | null; isAdmin?: boolean } | null;
 }) {
   const router = useRouter();
 
@@ -40,6 +40,11 @@ export default function AuthHeader({
         Trip Planner
       </Link>
       <div className="flex items-center gap-4 text-sm">
+        {user.isAdmin && (
+          <Link href="/admin" className="text-gray-600 hover:text-gray-900">
+            Admin
+          </Link>
+        )}
         <span className="text-gray-600">Logged in as {user.name}</span>
         <button onClick={handleLogout} className="text-gray-600 hover:text-gray-900">
           Log Out
