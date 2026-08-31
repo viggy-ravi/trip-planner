@@ -3,6 +3,7 @@
 import { Note } from "../types";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
+import { PencilIcon, TrashIcon } from "./Icons";
 import { useState } from "react";
 
 export default function NoteListItem({
@@ -58,7 +59,7 @@ export default function NoteListItem({
             type="text"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="flex-1"
+            className="flex-1 min-w-0"
           />
           <Button type="submit">Save</Button>
         </form>
@@ -74,16 +75,18 @@ export default function NoteListItem({
         <span className="text-gray-500"> — {note.author.name}</span>
         {error && <span className="text-xs text-red-600 block">{error}</span>}
       </span>
-      <span className="flex items-center gap-3 shrink-0">
+      <span className="flex items-center gap-1 shrink-0">
         <button
           onClick={() => setIsEditing(true)}
-          className="text-xs text-gray-500 hover:text-gray-900"
+          aria-label="Edit note"
+          title="Edit note"
+          className="text-gray-400 hover:text-gray-900 p-1"
         >
-          Edit
+          <PencilIcon className="w-3.5 h-3.5" />
         </button>
         <form onSubmit={handleDeleteNote} className="inline">
-          <button type="submit" className="text-xs text-red-600 hover:text-red-800">
-            Delete
+          <button type="submit" aria-label="Delete note" title="Delete note" className="text-gray-400 hover:text-red-600 p-1">
+            <TrashIcon className="w-3.5 h-3.5" />
           </button>
         </form>
       </span>
